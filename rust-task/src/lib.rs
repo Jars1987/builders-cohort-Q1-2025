@@ -13,7 +13,7 @@ pub mod programs;
     };
     use bs58;
     use std::{io::{self, BufRead}, str::FromStr};
-    use crate::programs::turbin3_prereq::{WbaPrereqProgram, CompleteArgs};
+    use crate::programs::turbin3_prereq::{TurbinePrereqProgram, CompleteArgs, UpdateArgs};
 
     const RPC_URL: &str = "https://api.devnet.solana.com";
     
@@ -135,7 +135,7 @@ pub mod programs;
         let rpc_client = RpcClient::new(RPC_URL);
 
         let signer = read_keypair_file("Turbin3-wallet.json").expect("Couldn't find wallet file");
-        let prereq = WbaPrereqProgram::derive_program_address(&[b"prereq", signer.pubkey().to_bytes().as_ref()]);
+        let prereq = TurbinePrereqProgram::derive_program_address(&[b"prereq", signer.pubkey().to_bytes().as_ref()]);
 
         let args = CompleteArgs {
             github: b"jars1987".to_vec()
@@ -145,7 +145,7 @@ pub mod programs;
         .get_latest_blockhash()
         .expect("Failed to get recent blockhash");        
 
-        let transaction = WbaPrereqProgram::complete(
+        let transaction = TurbinePrereqProgram::complete(
             &[&signer.pubkey(), &prereq, &system_program::id()],
             &args,
             Some(&signer.pubkey()),           
@@ -161,4 +161,37 @@ pub mod programs;
         println!("Success! Check out your TX here: https://explorer.solana.com/tx/{}/?cluster=devnet", signature);
     }
 
+
+    #[test]
+    fn update() {
+        let rpc_client = RpcClient::new(RPC_URL);
+
+        let signer = read_keypair_file("Turbin3-wallet.json").expect("Couldn't find wallet file");
+        let prereq = TurbinePrereqProgram::derive_program_address(&[b"prereq", signer.pubkey().to_bytes().as_ref()]);
+
+        let args = UpdateArgs {
+            github: b"jars1987".to_vec()
+        };
+
+        let recent_blockhash = rpc_client
+        .get_latest_blockhash()
+        .expect("Failed to get recent blockhash");        
+
+        //Call the update function, just like any other instruction
+        let transaction = TurbinePrereqProgram::update(
+            &[&signer.pubkey(), &prereq, &system_program::id()],
+            &args,
+            Some(&signer.pubkey()),           
+            &[&signer],
+            recent_blockhash
+        );
+
+        let signature = rpc_client
+        .send_and_confirm_transaction(&transaction)
+        .expect("Failed to send transaction");
+
+        println!("Success! Check out your TX here: https://explorer.solana.com/tx/{}/?cluster=devnet", signature);
     }
+}
+
+    
